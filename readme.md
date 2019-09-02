@@ -2,4 +2,4 @@
 
 Created for 2019 HubSpot Developer Meetup
 
-Please reference slide deck here: https://bit.ly/2k01DBY
+Please reference slide deck here: https://bit.ly/2kejzce
