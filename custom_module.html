@@ -1,0 +1,60 @@
+{#
+  This HTML is not part of the Firebase app. It's the code for the HubSpot custom 
+  module. This code goes into the HTML/HubL panel of the custom module.
+  
+  Create 2 custom module fields:
+  1. form_id (ID of the form to embed)
+  2. slots_table (HubDB Table to get  "available slots" from 
+  
+#}
+<script charset="utf-8" type="text/javascript" 
+  src="//js.hsforms.net/forms/shell.js"></script>
+<script>
+  var $slots_field;
+  var $slots_id_field;
+  var $slots_select;        
+  var slots_available = []; // JS array to store all slots
+  hbspt.forms.create({
+	portalId: "{{ hub_id }}",
+	formId: "{{ module.form_field.form_id }}",
+  onFormReady: function($form){
+    // Set up the slots SELECT box
+    $slots_select=$('<select name="_slot_select" class="hs-input">' +
+                    '  <option value="">Select One</option>' +
+                    '</select>');
+    // Get all available slots from HubDB - any slots where qty is > 0
+    {% for row in hubdb_table_rows(module.slots_table, '&qty_available__gt=0') %}
+      // Add slot to slots_available JS array
+      slots_available[{{ row.hs_id }}] = 
+        '{{ row.available_datetime|datetimeformat('%x %l:%M%p')}}';
+      // Add slot to SELECT box as an option
+      $slots_select.append('<option value="{{ row.hs_id }}">' +
+        '{{ row.available_datetime|datetimeformat('%x %l:%M%p')}}' +
+        '({{row.qty_available}} spots left) </option>'
+      );
+    {% endfor %}    
+
+    // Find the form's volunteer slot input field and hide it, 
+    // then put our SELECT box after it.
+    $slots_field = $form.find('[name=volunteer_slot_date_time]');
+    $slots_field.hide().after($slots_select);
+
+    // Find the form's volunteer slot ID input field and save 
+    // it as a variable to use later.
+    $slots_id_field = $form.find('[name=volunteer_slot_date_time_id]');    
+  },
+                     
+  onFormSubmit: function($form) {
+    // On form submission, take the selected slot information 
+    // from our SELECT box and insert the slot ID and slot data 
+    // into their respective hidden fields.
+    var slot_selected_id = $slots_select.val();
+    var slot_selected_value = slots_available[slot_selected_id];
+    $slots_id_field.val(slot_selected_id).change();  
+    $slots_field.val(slot_selected_value).change();
+    console.log('onsubmit',$slots_field.val());
+    // Form will now submit with the slot ID and value in their 
+    // respective form fields
+  }
+});
+</script>
